@@ -1,4 +1,4 @@
-# BriQR
+# WarriorQR
 
 Generador web de códigos QR normal o con logo central.
 

@@ -1,6 +1,6 @@
 {
-  "name": "BriQR - Generador de códigos QR",
-  "short_name": "BriQR",
+  "name": "WarriorQR - Generador de códigos QR",
+  "short_name": "WarriorQR",
   "description": "Genera códigos QR normales o personalizados con tu logo.",
   "start_url": "./",
   "scope": "./",

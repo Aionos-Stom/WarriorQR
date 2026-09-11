@@ -257,7 +257,7 @@
 
     try {
       await qrCode.download({
-        name: currentMode === "logo" && logoDataUrl ? "BriQR-con-logo" : "BriQR",
+        name: currentMode === "logo" && logoDataUrl ? "WarriorQR-con-logo" : "WarriorQR",
         extension
       });
       showMessage(`Tu archivo ${extension.toUpperCase()} se descargó correctamente.`, "success");
