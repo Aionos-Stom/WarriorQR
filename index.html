@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BriQR">
+  <meta name="description" content="Genera códigos QR normales o personalizados con tu logo.">
+  <title>BriQR | Generador de códigos QR</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+
+  <script defer src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div class="background-orb orb-one"></div>
+  <div class="background-orb orb-two"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="Inicio de BriQR">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img">
+          <rect x="4" y="4" width="16" height="16" rx="4"></rect>
+          <rect x="28" y="4" width="16" height="16" rx="4"></rect>
+          <rect x="4" y="28" width="16" height="16" rx="4"></rect>
+          <rect x="29" y="29" width="6" height="6" rx="1"></rect>
+          <rect x="38" y="29" width="6" height="15" rx="1"></rect>
+          <rect x="29" y="38" width="6" height="6" rx="1"></rect>
+        </svg>
+      </span>
+      <span>Bri<span>QR</span></span>
+    </a>
+    <div class="privacy-pill">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 5 6v5c0 4.5 2.9 8.7 7 10 4.1-1.3 7-5.5 7-10V6l-7-3Z"></path>
+        <path d="m9.5 12 1.7 1.7 3.6-3.7"></path>
+      </svg>
+      Todo se procesa en tu dispositivo
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero">
+      <div class="eyebrow">Rápido, privado y gratuito</div>
+      <h1>Crea tu código QR<br><span>en segundos.</span></h1>
+      <p>Genera un QR clásico o personalízalo con el logo de tu marca. Sin registros ni almacenamiento de datos.</p>
+    </section>
+
+    <section class="generator-grid" aria-label="Generador de códigos QR">
+      <div class="panel controls-panel">
+        <div class="mode-switch" role="tablist" aria-label="Tipo de código QR">
+          <button class="mode-button active" type="button" data-mode="normal" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+              <path d="M14 14h3v3h-3zm4 4h3v3h-3zm0-4h3"></path>
+            </svg>
+            QR normal
+          </button>
+          <button class="mode-button" type="button" data-mode="logo" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+              <path d="m7 16 3-3 2 2 2.5-3 2.5 2.5"></path>
+              <circle cx="9" cy="9" r="1.4"></circle>
+            </svg>
+            QR con logo
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="qr-content">Contenido del código</label>
+          <div class="textarea-wrapper">
+            <textarea id="qr-content" rows="4" maxlength="2000" spellcheck="false" placeholder="Escribe una URL, texto, teléfono, correo...">https://www.example.com</textarea>
+            <span id="char-count">23/2000</span>
+          </div>
+          <p class="helper-text">Puedes introducir cualquier texto o enlace válido.</p>
+        </div>
+
+        <div id="logo-section" class="logo-section hidden" aria-hidden="true">
+          <label>Logo central</label>
+          <label class="upload-box" for="logo-input">
+            <input id="logo-input" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+            <span class="upload-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 16V4"></path>
+                <path d="m7 9 5-5 5 5"></path>
+                <path d="M5 14v5h14v-5"></path>
+              </svg>
+            </span>
+            <span class="upload-copy">
+              <strong id="upload-title">Selecciona tu logo</strong>
+              <small id="upload-subtitle">PNG, JPG, WEBP o SVG · Máx. 5 MB</small>
+            </span>
+            <span class="upload-action">Buscar</span>
+          </label>
+
+          <div id="logo-preview-row" class="logo-preview-row hidden">
+            <div class="selected-logo">
+              <img id="selected-logo-image" alt="Logo seleccionado">
+              <div>
+                <strong id="selected-logo-name"></strong>
+                <small id="selected-logo-size"></small>
+              </div>
+            </div>
+            <button id="remove-logo" class="icon-button" type="button" aria-label="Eliminar logo">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="range-row">
+            <div>
+              <label for="logo-size">Tamaño del logo</label>
+              <small>Se recomienda mantenerlo moderado.</small>
+            </div>
+            <div class="range-control">
+              <input id="logo-size" type="range" min="15" max="30" value="22">
+              <output id="logo-size-output" for="logo-size">22%</output>
+            </div>
+          </div>
+        </div>
+
+        <div class="customization-grid">
+          <div class="form-group compact">
+            <label for="qr-color">Color del QR</label>
+            <div class="color-control">
+              <input id="qr-color" type="color" value="#111827">
+              <input id="qr-color-text" type="text" value="#111827" maxlength="7" aria-label="Código hexadecimal del QR">
+            </div>
+          </div>
+
+          <div class="form-group compact">
+            <label for="background-color">Color de fondo</label>
+            <div class="color-control">
+              <input id="background-color" type="color" value="#ffffff">
+              <input id="background-color-text" type="text" value="#FFFFFF" maxlength="7" aria-label="Código hexadecimal del fondo">
+            </div>
+          </div>
+        </div>
+
+        <button id="generate-button" class="primary-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v18M3 12h18"></path>
+          </svg>
+          Generar código QR
+        </button>
+
+        <div id="message" class="message" role="status" aria-live="polite"></div>
+      </div>
+
+      <aside class="panel preview-panel">
+        <div class="preview-header">
+          <div>
+            <span class="section-label">Vista previa</span>
+            <h2>Tu código QR</h2>
+          </div>
+          <span id="mode-badge" class="mode-badge">Normal</span>
+        </div>
+
+        <div class="qr-stage">
+          <div id="qr-canvas" class="qr-canvas" aria-label="Vista previa del código QR"></div>
+          <div id="empty-state" class="empty-state hidden">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <rect x="5" y="5" width="14" height="14" rx="2"></rect>
+              <rect x="29" y="5" width="14" height="14" rx="2"></rect>
+              <rect x="5" y="29" width="14" height="14" rx="2"></rect>
+              <path d="M29 29h6v6h-6zm9 9h5v5h-5zm0-9h5"></path>
+            </svg>
+            <strong>Tu QR aparecerá aquí</strong>
+            <span>Completa el contenido y pulsa generar.</span>
+          </div>
+        </div>
+
+        <p class="scan-tip">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 11v5M12 8h.01"></path>
+          </svg>
+          Prueba siempre el QR con la cámara de tu teléfono antes de imprimirlo.
+        </p>
+
+        <div class="download-grid">
+          <button id="download-png" class="secondary-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12"></path>
+              <path d="m7 10 5 5 5-5"></path>
+              <path d="M5 20h14"></path>
+            </svg>
+            Descargar PNG
+          </button>
+          <button id="download-svg" class="secondary-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12"></path>
+              <path d="m7 10 5 5 5-5"></path>
+              <path d="M5 20h14"></path>
+            </svg>
+            Descargar SVG
+          </button>
+        </div>
+
+        <button id="reset-button" class="text-button" type="button">Generar uno nuevo</button>
+      </aside>
+    </section>
+
+    <section class="features">
+      <article>
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3 5 6v5c0 4.5 2.9 8.7 7 10 4.1-1.3 7-5.5 7-10V6l-7-3Z"></path>
+            <path d="m9.5 12 1.7 1.7 3.6-3.7"></path>
+          </svg>
+        </span>
+        <div><strong>100% privado</strong><span>Tus datos no salen de tu dispositivo.</span></div>
+      </article>
+      <article>
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"></path>
+          </svg>
+        </span>
+        <div><strong>Generación instantánea</strong><span>Obtén tu QR listo para usar.</span></div>
+      </article>
+      <article>
+        <span class="feature-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 19V5h16v14H4Z"></path>
+            <path d="m8 15 2.5-3 2 2 2.5-3 2 2.5"></path>
+          </svg>
+        </span>
+        <div><strong>Alta calidad</strong><span>Exporta en PNG o SVG.</span></div>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>© <span id="year"></span> BriQR · Creado para generar, compartir y conectar.</p>
+  </footer>
+</body>
+</html>
