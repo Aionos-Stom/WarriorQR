@@ -1,14 +1,17 @@
-const CACHE_NAME = "warriorqr-v1.0.2";
+const CACHE_NAME = "warriorqr-v2.0.0";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./script.js",
+  "./qr-formats.js",
+  "./history-store.js",
   "./manifest.json",
   "./assets/favicon.svg",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
-  "https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/lib/qr-code-styling.js"
+  "./assets/icon-maskable-512.png",
+  "./assets/vendor/qr-code-styling.js"
 ];
 
 self.addEventListener("install", event => {
