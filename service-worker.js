@@ -1,4 +1,4 @@
-const CACHE_NAME = "warriorqr-v2.0.0";
+const CACHE_NAME = "warriorqr-v2.1.0";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -33,15 +33,18 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
+  // Red primero: mientras haya conexión, siempre sirve la versión más
+  // reciente y refresca la caché. Solo recurre a la caché cuando falla
+  // la red (modo offline) — así una actualización nunca queda "atascada"
+  // por una versión de caché desactualizada.
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-
-      return fetch(event.request).then(response => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        return response;
-      }).catch(() => {
+    fetch(event.request).then(response => {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+      return response;
+    }).catch(() => {
+      return caches.match(event.request).then(cached => {
+        if (cached) return cached;
         if (event.request.mode === "navigate") return caches.match("./index.html");
         return new Response("", { status: 503, statusText: "Offline" });
       });
