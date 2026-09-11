@@ -2,13 +2,19 @@
   "use strict";
 
   const els = {};
-  let qrCode;
+  let qrInstance;
   let currentType = "text";
   let phoneKind = "call";
   let logoDataUrl = "";
   let isGenerated = false;
 
+  let bgMode = "color";
+  let bgImage = null;
+  let emojiLayout = [];
+
   const MAX_LOGO_BYTES = 5 * 1024 * 1024;
+  const MAX_BG_IMAGE_BYTES = 8 * 1024 * 1024;
+  const RENDER_SIZE = 1000;
   const TYPE_LABELS = {
     text: "Texto / URL",
     wifi: "WiFi",
@@ -64,11 +70,24 @@
       backgroundColor: document.getElementById("background-color"),
       backgroundColorText: document.getElementById("background-color-text"),
 
+      bgModeButtons: [...document.querySelectorAll("[data-bg-mode]")],
+      bgFieldGroups: [...document.querySelectorAll(".bg-fields")],
+      bgImageInput: document.getElementById("bg-image-input"),
+      bgImageTitle: document.getElementById("bg-image-title"),
+      bgImageOpacity: document.getElementById("bg-image-opacity"),
+      bgImageOpacityOutput: document.getElementById("bg-image-opacity-output"),
+      bgEmojiChars: document.getElementById("bg-emoji-chars"),
+      bgEmojiSize: document.getElementById("bg-emoji-size"),
+      bgEmojiSizeOutput: document.getElementById("bg-emoji-size-output"),
+      bgEmojiOpacity: document.getElementById("bg-emoji-opacity"),
+      bgEmojiOpacityOutput: document.getElementById("bg-emoji-opacity-output"),
+
       generateButton: document.getElementById("generate-button"),
       downloadPng: document.getElementById("download-png"),
       downloadSvg: document.getElementById("download-svg"),
       resetButton: document.getElementById("reset-button"),
       canvas: document.getElementById("qr-canvas"),
+      renderCanvas: document.getElementById("qr-render-canvas"),
       emptyState: document.getElementById("empty-state"),
       modeBadge: document.getElementById("mode-badge"),
       message: document.getElementById("message"),
@@ -210,13 +229,12 @@
 
   // ---------- QR ----------
 
-  function buildOptions(data) {
-    const size = 1000;
+  function buildQrOptions(data, backgroundColor) {
     const withLogo = els.logoToggle.checked && Boolean(logoDataUrl);
 
     return {
-      width: size,
-      height: size,
+      width: RENDER_SIZE,
+      height: RENDER_SIZE,
       type: "svg",
       data,
       image: withLogo ? logoDataUrl : undefined,
@@ -238,7 +256,7 @@
         type: "rounded"
       },
       backgroundOptions: {
-        color: els.backgroundColor?.value || "#ffffff"
+        color: backgroundColor
       },
       cornersSquareOptions: {
         color: els.qrColor?.value || "#111827",
@@ -251,7 +269,90 @@
     };
   }
 
-  function updateQr(initial) {
+  function drawBackgroundLayer(ctx) {
+    ctx.clearRect(0, 0, RENDER_SIZE, RENDER_SIZE);
+
+    if (bgMode === "color") {
+      ctx.fillStyle = els.backgroundColor?.value || "#ffffff";
+      ctx.fillRect(0, 0, RENDER_SIZE, RENDER_SIZE);
+      return;
+    }
+
+    if (bgMode === "transparent") {
+      return;
+    }
+
+    if (bgMode === "image" && bgImage) {
+      const opacity = Number(els.bgImageOpacity?.value || 55) / 100;
+      const scale = Math.max(RENDER_SIZE / bgImage.naturalWidth, RENDER_SIZE / bgImage.naturalHeight);
+      const drawW = bgImage.naturalWidth * scale;
+      const drawH = bgImage.naturalHeight * scale;
+      const offsetX = (RENDER_SIZE - drawW) / 2;
+      const offsetY = (RENDER_SIZE - drawH) / 2;
+      ctx.globalAlpha = opacity;
+      ctx.drawImage(bgImage, offsetX, offsetY, drawW, drawH);
+      ctx.globalAlpha = 1;
+      return;
+    }
+
+    if (bgMode === "emoji" && emojiLayout.length) {
+      const opacity = Number(els.bgEmojiOpacity?.value || 35) / 100;
+      ctx.globalAlpha = opacity;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      emojiLayout.forEach(item => {
+        ctx.save();
+        ctx.translate(item.x, item.y);
+        ctx.rotate(item.rot);
+        ctx.font = `${item.size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+        ctx.fillText(item.char, 0, 0);
+        ctx.restore();
+      });
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function regenerateEmojiLayout() {
+    const raw = (els.bgEmojiChars?.value || "").trim();
+    const chars = raw.length ? raw.split(/\s+/).slice(0, 12) : ["🎉"];
+    const size = Number(els.bgEmojiSize?.value || 36);
+    const step = size * 1.5;
+    const layout = [];
+
+    for (let y = step / 2; y < RENDER_SIZE; y += step) {
+      for (let x = step / 2; x < RENDER_SIZE; x += step) {
+        const jitterX = (Math.random() - 0.5) * step * 0.3;
+        const jitterY = (Math.random() - 0.5) * step * 0.3;
+        layout.push({
+          x: x + jitterX,
+          y: y + jitterY,
+          char: chars[Math.floor(Math.random() * chars.length)],
+          size: size * (0.85 + Math.random() * 0.3),
+          rot: (Math.random() - 0.5) * 0.6
+        });
+      }
+    }
+    emojiLayout = layout;
+  }
+
+  async function compositeAndRender(data) {
+    const ctx = els.renderCanvas.getContext("2d");
+
+    const transparentOptions = buildQrOptions(data, "transparent");
+    if (!qrInstance) {
+      qrInstance = new QRCodeStyling(transparentOptions);
+    } else {
+      qrInstance.update(transparentOptions);
+    }
+
+    drawBackgroundLayer(ctx);
+
+    const blob = await qrInstance.getRawData("png");
+    const bitmap = await createImageBitmap(blob);
+    ctx.drawImage(bitmap, 0, 0, RENDER_SIZE, RENDER_SIZE);
+  }
+
+  async function updateQr(initial) {
     const fields = collectFields();
     const error = validate(currentType, fields);
 
@@ -269,12 +370,12 @@
     els.emptyState.classList.add("hidden");
     els.canvas.classList.remove("hidden");
 
-    const options = buildOptions(data);
-    if (!qrCode) {
-      qrCode = new QRCodeStyling(options);
-      qrCode.append(els.canvas);
-    } else {
-      qrCode.update(options);
+    try {
+      await compositeAndRender(data);
+    } catch (err) {
+      console.error(err);
+      showMessage("No se pudo generar el código QR. Inténtalo de nuevo.", "error");
+      return;
     }
 
     isGenerated = true;
@@ -291,14 +392,43 @@
     }
   }
 
+  function downloadCanvasPng(filenameBase) {
+    return new Promise((resolve, reject) => {
+      els.renderCanvas.toBlob(blob => {
+        if (!blob) { reject(new Error("No se pudo generar el PNG.")); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${filenameBase}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        resolve();
+      }, "image/png");
+    });
+  }
+
   async function download(extension) {
-    if (!isGenerated || !qrCode) return;
+    if (!isGenerated) return;
+
+    const filenameBase = els.logoToggle.checked && logoDataUrl ? "WarriorQR-con-logo" : "WarriorQR";
+
+    if (extension === "svg" && (bgMode === "image" || bgMode === "emoji")) {
+      showMessage("SVG no está disponible con fondo de imagen o emojis — descarga en PNG.", "error");
+      return;
+    }
 
     try {
-      await qrCode.download({
-        name: els.logoToggle.checked && logoDataUrl ? "WarriorQR-con-logo" : "WarriorQR",
-        extension
-      });
+      if (extension === "png") {
+        await downloadCanvasPng(filenameBase);
+      } else {
+        const fields = collectFields();
+        const data = QRFormats.build(currentType, fields);
+        const svgColor = bgMode === "transparent" ? "transparent" : (els.backgroundColor?.value || "#ffffff");
+        const svgInstance = new QRCodeStyling(buildQrOptions(data, svgColor));
+        await svgInstance.download({ name: filenameBase, extension: "svg" });
+      }
       showMessage(`Tu archivo ${extension.toUpperCase()} se descargó correctamente.`, "success");
     } catch (error) {
       console.error(error);
@@ -401,6 +531,60 @@
     if (isGenerated) updateQr(false);
   }
 
+  // ---------- Fondo del QR ----------
+
+  function switchBgMode(mode) {
+    bgMode = mode;
+    els.bgModeButtons.forEach(button => {
+      const active = button.dataset.bgMode === mode;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-checked", String(active));
+    });
+    els.bgFieldGroups.forEach(group => {
+      const active = group.id === `bg-${mode}-fields`;
+      group.classList.toggle("hidden", !active);
+    });
+
+    if (mode === "emoji" && !emojiLayout.length) regenerateEmojiLayout();
+    if (isGenerated) updateQr(false);
+  }
+
+  function handleBgImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      showMessage("Selecciona una imagen PNG, JPG o WEBP.", "error");
+      return;
+    }
+    if (file.size > MAX_BG_IMAGE_BYTES) {
+      showMessage("La imagen de fondo supera el máximo permitido de 8 MB.", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        bgImage = img;
+        els.bgImageTitle.textContent = file.name;
+        showMessage("Imagen de fondo cargada.", "success");
+        if (isGenerated) updateQr(false);
+      };
+      img.onerror = () => showMessage("No fue posible leer la imagen seleccionada.", "error");
+      img.src = String(reader.result);
+    };
+    reader.onerror = () => showMessage("No fue posible leer la imagen seleccionada.", "error");
+    reader.readAsDataURL(file);
+  }
+
+  function clearBgImage() {
+    bgImage = null;
+    els.bgImageInput.value = "";
+    els.bgImageTitle.textContent = "Selecciona una imagen de fondo";
+  }
+
   // ---------- Helpers de UI ----------
 
   function linkColorInputs(picker, text) {
@@ -444,7 +628,7 @@
 
   function setDownloadState(enabled) {
     els.downloadPng.disabled = !enabled;
-    els.downloadSvg.disabled = !enabled;
+    els.downloadSvg.disabled = !enabled || bgMode === "image" || bgMode === "emoji";
   }
 
   function showMessage(text, type) {
@@ -493,6 +677,16 @@
     els.qrColorText.value = "#111827";
     els.backgroundColor.value = "#ffffff";
     els.backgroundColorText.value = "#FFFFFF";
+    switchBgMode("color");
+    clearBgImage();
+    els.bgImageOpacity.value = "55";
+    els.bgImageOpacityOutput.textContent = "55%";
+    els.bgEmojiChars.value = "🎉 ✨ 💫";
+    els.bgEmojiSize.value = "36";
+    els.bgEmojiSizeOutput.textContent = "36px";
+    els.bgEmojiOpacity.value = "35";
+    els.bgEmojiOpacityOutput.textContent = "35%";
+    emojiLayout = [];
     els.logoSize.value = "22";
     els.logoSizeOutput.textContent = "22%";
     els.logoToggle.checked = false;
@@ -555,6 +749,30 @@
 
     linkColorInputs(els.qrColor, els.qrColorText);
     linkColorInputs(els.backgroundColor, els.backgroundColorText);
+
+    els.bgModeButtons.forEach(button => {
+      button.addEventListener("click", () => switchBgMode(button.dataset.bgMode));
+    });
+
+    els.bgImageInput.addEventListener("change", handleBgImage);
+    els.bgImageOpacity.addEventListener("input", () => {
+      els.bgImageOpacityOutput.textContent = `${els.bgImageOpacity.value}%`;
+      if (isGenerated && bgMode === "image" && bgImage) updateQr(false);
+    });
+
+    els.bgEmojiChars.addEventListener("input", () => {
+      regenerateEmojiLayout();
+      if (isGenerated && bgMode === "emoji") updateQr(false);
+    });
+    els.bgEmojiSize.addEventListener("input", () => {
+      els.bgEmojiSizeOutput.textContent = `${els.bgEmojiSize.value}px`;
+      regenerateEmojiLayout();
+      if (isGenerated && bgMode === "emoji") updateQr(false);
+    });
+    els.bgEmojiOpacity.addEventListener("input", () => {
+      els.bgEmojiOpacityOutput.textContent = `${els.bgEmojiOpacity.value}%`;
+      if (isGenerated && bgMode === "emoji") updateQr(false);
+    });
 
     els.generateButton.addEventListener("click", () => updateQr(false));
     els.downloadPng.addEventListener("click", () => download("png"));

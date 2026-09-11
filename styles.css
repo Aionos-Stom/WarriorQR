@@ -1395,3 +1395,51 @@ select:focus {
   }
 }
 
+/* ---------- Fondo del QR ---------- */
+
+.bg-mode-switch {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 16px;
+}
+
+.bg-fields {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.bg-fields .upload-box {
+  margin-bottom: 14px !important;
+}
+
+.bg-fields .range-row:last-child {
+  margin-top: 0;
+}
+
+#bg-emoji-chars {
+  margin-bottom: 14px;
+}
+
+.qr-canvas {
+  position: relative;
+}
+
+.qr-canvas canvas#qr-render-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 440px) {
+  .bg-mode-switch {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .bg-fields {
+    background: #0d1524;
+    border-color: var(--line);
+  }
+}
+

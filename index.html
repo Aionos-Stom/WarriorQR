@@ -228,20 +228,78 @@
           </div>
         </div>
 
-        <div class="customization-grid">
-          <div class="form-group compact">
-            <label for="qr-color">Color del QR</label>
-            <div class="color-control">
-              <input id="qr-color" type="color" value="#111827">
-              <input id="qr-color-text" type="text" value="#111827" maxlength="7" aria-label="Código hexadecimal del QR">
-            </div>
+        <div class="form-group compact">
+          <label for="qr-color">Color del QR</label>
+          <div class="color-control">
+            <input id="qr-color" type="color" value="#111827">
+            <input id="qr-color-text" type="text" value="#111827" maxlength="7" aria-label="Código hexadecimal del QR">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Fondo del QR</label>
+          <div class="mini-switch bg-mode-switch" role="radiogroup" aria-label="Tipo de fondo del QR" id="bg-mode-switch">
+            <button type="button" class="mini-button active" data-bg-mode="color" role="radio" aria-checked="true">Color</button>
+            <button type="button" class="mini-button" data-bg-mode="transparent" role="radio" aria-checked="false">Transparente</button>
+            <button type="button" class="mini-button" data-bg-mode="image" role="radio" aria-checked="false">Imagen</button>
+            <button type="button" class="mini-button" data-bg-mode="emoji" role="radio" aria-checked="false">Emojis</button>
           </div>
 
-          <div class="form-group compact">
-            <label for="background-color">Color de fondo</label>
+          <div id="bg-color-fields" class="bg-fields">
             <div class="color-control">
               <input id="background-color" type="color" value="#ffffff">
               <input id="background-color-text" type="text" value="#FFFFFF" maxlength="7" aria-label="Código hexadecimal del fondo">
+            </div>
+          </div>
+
+          <div id="bg-transparent-fields" class="bg-fields hidden">
+            <p class="helper-text">Sin relleno detrás del QR — ideal para superponerlo sobre otro diseño.</p>
+          </div>
+
+          <div id="bg-image-fields" class="bg-fields hidden">
+            <label class="upload-box" for="bg-image-input">
+              <input id="bg-image-input" type="file" accept="image/png,image/jpeg,image/webp">
+              <span class="upload-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V4"></path>
+                  <path d="m7 9 5-5 5 5"></path>
+                  <path d="M5 14v5h14v-5"></path>
+                </svg>
+              </span>
+              <span class="upload-copy">
+                <strong id="bg-image-title">Selecciona una imagen de fondo</strong>
+                <small>PNG, JPG o WEBP · Máx. 8 MB</small>
+              </span>
+              <span class="upload-action">Buscar</span>
+            </label>
+            <div class="range-row">
+              <div>
+                <label for="bg-image-opacity">Opacidad de la imagen</label>
+                <small>Bájala si el QR pierde legibilidad.</small>
+              </div>
+              <div class="range-control">
+                <input id="bg-image-opacity" type="range" min="10" max="100" value="55">
+                <output id="bg-image-opacity-output">55%</output>
+              </div>
+            </div>
+          </div>
+
+          <div id="bg-emoji-fields" class="bg-fields hidden">
+            <label for="bg-emoji-chars">Emoji(s) — sepáralos con espacio</label>
+            <input id="bg-emoji-chars" type="text" maxlength="40" placeholder="🎉 ✨ 💫" value="🎉 ✨ 💫">
+            <div class="range-row">
+              <div><label for="bg-emoji-size">Tamaño</label></div>
+              <div class="range-control">
+                <input id="bg-emoji-size" type="range" min="20" max="60" value="36">
+                <output id="bg-emoji-size-output">36px</output>
+              </div>
+            </div>
+            <div class="range-row">
+              <div><label for="bg-emoji-opacity">Opacidad</label></div>
+              <div class="range-control">
+                <input id="bg-emoji-opacity" type="range" min="10" max="100" value="35">
+                <output id="bg-emoji-opacity-output">35%</output>
+              </div>
             </div>
           </div>
         </div>
@@ -266,7 +324,9 @@
         </div>
 
         <div class="qr-stage">
-          <div id="qr-canvas" class="qr-canvas" aria-label="Vista previa del código QR"></div>
+          <div id="qr-canvas" class="qr-canvas" aria-label="Vista previa del código QR">
+            <canvas id="qr-render-canvas" width="1000" height="1000"></canvas>
+          </div>
           <div id="empty-state" class="empty-state hidden">
             <svg viewBox="0 0 48 48" aria-hidden="true">
               <rect x="5" y="5" width="14" height="14" rx="2"></rect>
